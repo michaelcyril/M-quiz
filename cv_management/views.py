@@ -10,12 +10,11 @@ from users_management.models import User, SeekerProfile
 # Create your views here.
 @api_view(["POST"])
 @permission_classes([AllowAny])
-def InsertVacancy(request):
+def InsertTest(request):
     data = request.data
-    vacancy = JobVacancy.objects.create(
-        company=data['company'],
-        jobTitle=data['jobTitle'],
-        jobType=data['jobType']
+    vacancy = Test.objects.create(
+        name=data['name'],
+        description=data['description'],
     )
     vacancy.save()
     response = {'message': "success"}
@@ -23,22 +22,20 @@ def InsertVacancy(request):
 
 
 # {
-#     "company": "tigo",
-#     "jobTitle": "software developer",
-#     "jobType": "part-time",
+#     "name": "Geography",
+#     "description": "For students of science",
 # }
 
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
-def setQuestions(request, vac_id):
+def setQuestions(request, test_id):
     # added by a specific company which hiring
     data = request.data
     for s in data:
         question = Question.objects.create(
             question=s['question'],
-            is_checkable=s['is_checkable'],
-            vacancy_id=JobVacancy.objects.get(id=vac_id)
+            test_id=Test.objects.get(id=test_id)
         )
         question.save()
         q = Question.objects.get(id=question.id)
@@ -51,13 +48,13 @@ def setQuestions(request, vac_id):
 
 
 # data = [
-#     {"question": "bra bra", "is_checkable": false,
+#     {"question": "bra bra",
 #      "answer":[
 #          {"answer": "yes", "is_correct": true},
 #          {"answer": "no", "is_correct": false}
 #         ]
 #      },
-#     {"question": "bra bra", "is_checkable": false,
+#     {"question": "bra bra",
 #      "answer":[
 #          {"answer": "yes", "is_correct": true},
 #          {"answer": "no", "is_correct": false}
@@ -68,25 +65,25 @@ def setQuestions(request, vac_id):
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
-def getMultipleChoice(request, vac_id):
-    vacancy = JobVacancy.objects.get(id=vac_id)
-    questions = Question.objects.values('id', 'question').filter(vacancy_id=vacancy)
+def getMultipleChoice(request, test_id):
+    test = Test.objects.get(id=test_id)
+    questions = Question.objects.values('id', 'question').filter(test_id=test)
     data = []
     for q in questions:
         que = Question.objects.get(id=q['id'])
         ans = Answer.objects.values('id', 'answer').filter(question_id=que)
         qs = {'id': q['id'], 'question': q['question'], 'answer': ans}
         data.append(qs)
-    try:
-        default_question = Question.objects.values('id', 'question').filter(is_checkable=True)
-        x = [e for e in default_question]
-        for q in x:
-            que = Question.objects.get(id=q['id'])
-            ans = Answer.objects.values('id', 'answer').filter(question_id=que)
-            qs = {'id': q['id'], 'question': q['question'], 'answer': ans}
-            data.append(qs)
-
-    except:
+    # try:
+    #     default_question = Question.objects.values('id', 'question').filter(is_checkable=True)
+    #     x = [e for e in default_question]
+    #     for q in x:
+    #         que = Question.objects.get(id=q['id'])
+    #         ans = Answer.objects.values('id', 'answer').filter(question_id=que)
+    #         qs = {'id': q['id'], 'question': q['question'], 'answer': ans}
+    #         data.append(qs)
+    #
+    # except:
         pass
     # response = {"data": data}
     return Response(data)
@@ -101,7 +98,7 @@ def getMultipleChoice(request, vac_id):
 @permission_classes([AllowAny])
 def setAnswer(request, seeker_id):
     # kata = Kata.objects.get(id=request.data['kata_id'])
-    seeker = SeekerProfile.objects.get(user_id=User.objects.get(id=seeker_id))
+    # seeker = SeekerProfile.objects.get(user_id=User.objects.get(id=seeker_id))
     data = request.data['answers']
     fail = []
     pas = []
@@ -116,44 +113,44 @@ def setAnswer(request, seeker_id):
         else:
             d_q.append(r)
     print(d_q)
-    for r2 in d_q:
-        is_corr = False
-        ans = Answer.objects.get(id=r2['answer_id'])
-        try:
-            if ans.answer == seeker.education_level:
-                is_corr = True
-            else:
-                pass
-        except:
-            pass
-
-        try:
-            if ans.answer == seeker.country:
-                is_corr = True
-            else:
-                pass
-        except:
-            pass
-
-        try:
-            if ans.answer == seeker.gender:
-                is_corr = True
-            else:
-                pass
-        except:
-            pass
-
-        if is_corr:
-            pas.append(1)
-        else:
-            fail.append(1)
+    # for r2 in d_q:
+    #     is_corr = False
+    #     ans = Answer.objects.get(id=r2['answer_id'])
+    #     try:
+    #         if ans.answer == seeker.education_level:
+    #             is_corr = True
+    #         else:
+    #             pass
+    #     except:
+    #         pass
+    #
+    #     try:
+    #         if ans.answer == seeker.country:
+    #             is_corr = True
+    #         else:
+    #             pass
+    #     except:
+    #         pass
+    #
+    #     try:
+    #         if ans.answer == seeker.gender:
+    #             is_corr = True
+    #         else:
+    #             pass
+    #     except:
+    #         pass
+    #
+    #     if is_corr:
+    #         pas.append(1)
+    #     else:
+    #         fail.append(1)
 
     percent = 100 * len(pas) / (len(pas) + len(fail))
     if percent < 50:
         status = "failed"
     else:
         status = "pass"
-    vac = request.data['vac_id']
+    test_id = request.data['test_id']
     user_id = request.data['user_id']
 
     print(percent)
@@ -165,6 +162,7 @@ def setAnswer(request, seeker_id):
         print(len(attempts))
         if len(attempts) == 3:
             message = {'message': 'failed to save attempt', 'success': False}
+            print(message)
             return Response(message)
         print('000000000000')
         b = len(attempts)/0
@@ -172,19 +170,19 @@ def setAnswer(request, seeker_id):
     except:
         print('reached -----------')
         attempt = Attempts.objects.create(
-            vacancy=JobVacancy.objects.get(id=vac),
+            test=Test.objects.get(id=test_id),
             user=User.objects.get(id=user_id),
             percent=str(percent),
             state=status
         )
         attempt.save()
-
+    print(data)
     data = {'percent': percent, 'status': status, 'success': True}
     return Response(data)
 
 
 # {
-#     'vac_id': 1,
+#     'test_id': 1,
 #     'user_id': 2,
 #     'answers': []
 # }
@@ -198,57 +196,57 @@ def setAnswer(request, seeker_id):
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
-def GetVacancies(request):
-    data = JobVacancy.objects.values('id', 'company', 'jobTitle').all()
+def GetTests(request):
+    data = Test.objects.values('id', 'name', 'description').all()
     d = [e for e in data]
-    z = []
-    for i in d:
-        dt = JobVacancy.objects.get(id=i['id'])
-        req = Requirement.objects.values('id', 'requirement').filter(job=dt)
-        x = {
-            'id': dt.id,
-            'company': dt.company,
-            'jobTitle': dt.jobTitle,
-            'jobType': dt.jobType,
-            'requirements': req
-        }
-        z.append(x)
-    return Response(z)
-
-
-@api_view(["GET"])
-@permission_classes([AllowAny])
-def VacancyInfo(request, vac_id):
-    data = JobVacancy.objects.get(id=vac_id)
-    req = Requirement.objects.values('id', 'requirement').filter(vacancy_id=data)
-    d = {
-        'id': data.company,
-        'jobTitle': data.jobTitle,
-        'duration': data.duration,
-        'requirements': req
-    }
+    # z = []
+    # for i in d:
+    #     dt = Test.objects.get(id=i['id'])
+    #     req = Requirement.objects.values('id', 'requirement').filter(job=dt)
+    #     x = {
+    #         'id': dt.id,
+    #         'company': dt.company,
+    #         'jobTitle': dt.jobTitle,
+    #         'jobType': dt.jobType,
+    #         'requirements': req
+    #     }
+    #     z.append(x)
     return Response(d)
 
 
-@api_view(["POST"])
-@permission_classes([AllowAny])
-def DefaultQuestion(request):
-    # added by a specific company which hiring
-    data = request.data
-    for s in data:
-        question = Question.objects.create(
-            question=s['question'],
-            is_checkable=s['is_checkable']
-            # vacancy_id=JobVacancy.objects.get(id=vac_id)
-        )
-        question.save()
-        q = Question.objects.get(id=question.id)
-        for d in s['answer']:
-            answer = Answer.objects.create(answer=d['answer'], question_id=q, is_correct=d['is_correct'])
-            answer.save()
+# @api_view(["GET"])
+# @permission_classes([AllowAny])
+# def VacancyInfo(request, vac_id):
+#     data = JobVacancy.objects.get(id=vac_id)
+#     req = Requirement.objects.values('id', 'requirement').filter(vacancy_id=data)
+#     d = {
+#         'id': data.company,
+#         'jobTitle': data.jobTitle,
+#         'duration': data.duration,
+#         'requirements': req
+#     }
+#     return Response(d)
 
-    response = {"sms": 'success'}
-    return Response(response)
+
+# @api_view(["POST"])
+# @permission_classes([AllowAny])
+# def DefaultQuestion(request):
+#     # added by a specific company which hiring
+#     data = request.data
+#     for s in data:
+#         question = Question.objects.create(
+#             question=s['question'],
+#             is_checkable=s['is_checkable']
+#             # vacancy_id=JobVacancy.objects.get(id=vac_id)
+#         )
+#         question.save()
+#         q = Question.objects.get(id=question.id)
+#         for d in s['answer']:
+#             answer = Answer.objects.create(answer=d['answer'], question_id=q, is_correct=d['is_correct'])
+#             answer.save()
+#
+#     response = {"sms": 'success'}
+#     return Response(response)
 
 
 # [
@@ -275,14 +273,14 @@ def DefaultQuestion(request):
 # ]
 
 
-@api_view(["POST"])
-@permission_classes([AllowAny])
-def addRequirement(request):
-    job = JobVacancy.objects.get(id=request.data['vac_id'])
-    req = Requirement.objects.create(requirement=request.data['requirement'], job=job)
-    req.save()
-    response = {"save": True}
-    return Response(response)
+# @api_view(["POST"])
+# @permission_classes([AllowAny])
+# def addRequirement(request):
+#     job = JobVacancy.objects.get(id=request.data['vac_id'])
+#     req = Requirement.objects.create(requirement=request.data['requirement'], job=job)
+#     req.save()
+#     response = {"save": True}
+#     return Response(response)
 
 
 # {
@@ -291,12 +289,12 @@ def addRequirement(request):
 # }
 
 
-@api_view(["POST"])
-@permission_classes([AllowAny])
-def getRequirements(request, vac_id):
-    job = JobVacancy.objects.get(id=vac_id)
-    req = Requirement.objects.values('requirement').filter(job=job)
-    return Response(req)
+# @api_view(["POST"])
+# @permission_classes([AllowAny])
+# def getRequirements(request, vac_id):
+#     job = JobVacancy.objects.get(id=vac_id)
+#     req = Requirement.objects.values('requirement').filter(job=job)
+#     return Response(req)
 
 
 @api_view(["GET"])
@@ -307,8 +305,8 @@ def getAttempts(request, user_id):
     for data in attempts:
         datas.append(
             {
-                'job': data.vacancy.jobTitle,
-                'company': data.vacancy.company,
+                'test': data.test.name,
+                'description': data.test.description,
                 'percent': data.percent,
                 'status': data.state
             }

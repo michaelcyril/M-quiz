@@ -4,33 +4,31 @@ from users_management.models import *
 
 # Create your models here.
 
-class JobVacancy(models.Model):
-    choice = (('part-time', 'part-time'), ('full-time', 'full-time'))
-    company = models.CharField(max_length=30)
-    jobTitle = models.CharField(max_length=200)
-    jobType = models.CharField(max_length=20, choices=choice)
+class Test(models.Model):
+    name = models.CharField(max_length=30)
+    description = models.CharField(max_length=200)
 
     def __str__(self):
         return f''
 
     class Meta:
-        db_table = 'job_vacancy'
+        db_table = 'test'
 
 
-class Requirement(models.Model):
-    requirement = models.CharField(max_length=200)
-    job = models.ForeignKey(JobVacancy, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f'{self.requirement}'
-
-    class Meta:
-        db_table = 'requirements'
+# class Requirement(models.Model):
+#     requirement = models.CharField(max_length=200)
+#     job = models.ForeignKey(JobVacancy, on_delete=models.CASCADE)
+#
+#     def __str__(self):
+#         return f'{self.requirement}'
+#
+#     class Meta:
+#         db_table = 'requirements'
 
 
 class Question(models.Model):
     question = models.TextField()
-    vacancy_id = models.ForeignKey(JobVacancy, on_delete=models.CASCADE, null=True)
+    test_id = models.ForeignKey(Test, on_delete=models.CASCADE, null=True)
     is_checkable = models.BooleanField(default=False)
 
     class Meta:
@@ -53,7 +51,7 @@ class Answer(models.Model):
 
 
 class Attempts(models.Model):
-    vacancy = models.ForeignKey(JobVacancy, on_delete=models.CASCADE)
+    test = models.ForeignKey(Test, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     percent = models.CharField(max_length=20)
     state = models.CharField(max_length=10)
